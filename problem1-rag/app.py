@@ -19,7 +19,7 @@ with st.sidebar:
     st.markdown("✅ Second-pass evidence verifier")
     st.markdown("✅ Fail-closed citation validation")
     st.divider()
-    st.caption('Required fallback:')
+    st.caption("Required fallback:")
     st.code("I don't know based on the provided documents")
 
 q = st.text_input(
@@ -45,7 +45,7 @@ if ask:
         st.subheader("Answer")
         if r["answer"] == UNKNOWN:
             st.warning(UNKNOWN)
-            st.caption(f"Guardrail decision: {r.get('decision','refused')}")
+            st.caption(f"Guardrail decision: {r.get('decision', 'refused')}")
         else:
             st.success(r["answer"])
             st.caption("This answer passed the independent grounding verifier.")
@@ -53,12 +53,12 @@ if ask:
             st.subheader("Verified sources")
             for c in r["citations"]:
                 with st.container(border=True):
-                    st.markdown(
-                        f"**[{c['source_id']}] {c['source']}**  
-"
+                    source_line = (
+                        f"**[{c['source_id']}] {c['source']}**  \n"
                         f"Page **{c['page']}** · Chunk **{c['chunk']}** · "
                         f"Retrieval score **{c['score']:.3f}**"
                     )
+                    st.markdown(source_line)
                     st.caption(c["excerpt"])
 
         with st.expander("🔍 Retrieved evidence / audit trail"):
@@ -66,7 +66,8 @@ if ask:
                 st.markdown(
                     f"**[{x['source_id']}] {x['source']} — page {x['page']}, "
                     f"chunk {x['chunk_index']} — hybrid {x['score']:.3f} "
-                    f"(semantic {x.get('semantic_score',0):.3f}, lexical {x.get('lexical_score',0):.3f})**"
+                    f"(semantic {x.get('semantic_score', 0):.3f}, "
+                    f"lexical {x.get('lexical_score', 0):.3f})**"
                 )
                 st.write(x["text"])
     except Exception as e:

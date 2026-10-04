@@ -181,3 +181,33 @@ pytest -q
 ```
 
 The core guardrail tests verify that missing citations, invented citations, and explicit unknown answers fail closed.
+
+
+## FinanceBench as the evaluation backbone
+
+The project now uses the dataset in three ways:
+
+1. **Document acquisition** — `doc_name` + `doc_link` identify the filings to index.
+2. **Retrieval evaluation** — `evidence[].evidence_page_num` is used as the gold citation page, so we can measure whether top-k retrieval reaches the correct page.
+3. **Answer evaluation** — the dataset's reference `answer` is compared against the generated answer, including numeric consistency.
+4. **Hallucination evaluation** — a separate out-of-domain question set measures whether the system correctly returns the required refusal.
+
+Run:
+
+```bash
+python evaluate_financebench.py --mode retrieval --limit 20
+python evaluate_financebench.py --mode full --limit 20
+python evaluate_financebench.py --mode refusal
+streamlit run eval_app.py
+```
+
+For a full benchmark, remove `--limit 20`.
+
+Generated metrics include:
+- retrieval page recall@k
+- answer accuracy
+- citation-page accuracy
+- joint answer + citation accuracy
+- refusal rate / refusal accuracy
+
+This makes FinanceBench part of the system's measurable quality loop, not merely a source of PDFs.

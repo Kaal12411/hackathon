@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-
 import pandas as pd
 
 NULL_TOKENS = {"", "null", "none", "n/a", "na", "nan", "-", "--", "unknown"}
@@ -19,11 +18,19 @@ def _clean_column_name(name: str) -> str:
     name = re.sub(r"\s+", " ", str(name)).strip()
     return name or "unnamed"
 
+def _is_text_like(series: pd.Series) -> bool:
+    return pd.api.types.is_object_dtype(series) or pd.api.types.is_string_dtype(series)
+
 def _maybe_numeric(series: pd.Series) -> pd.Series:
-    if series.dtype != "object":
+    if not _is_text_like(series):
         return series
     raw = series.astype("string")
-    cleaned = raw.str.replace(",", "", regex=False).str.replace("$", "", regex=False).str.replace("%", "", regex=False).str.strip()
+    cleaned = (
+        raw.str.replace(",", "", regex=False)
+           .str.replace("$", "", regex=False)
+           .str.replace("%", "", regex=False)
+           .str.strip()
+    )
     parsed = pd.to_numeric(cleaned, errors="coerce")
     non_null = raw.notna().sum()
     if non_null and parsed.notna().sum() / non_null >= 0.92:
@@ -33,7 +40,7 @@ def _maybe_numeric(series: pd.Series) -> pd.Series:
 def _maybe_datetime(series: pd.Series, name: str) -> pd.Series:
     if pd.api.types.is_datetime64_any_dtype(series):
         return series
-    if series.dtype != "object":
+    if not _is_text_like(series):
         return series
     hint = any(x in name.lower() for x in ("date", "time", "created", "closed", "due"))
     if not hint:
@@ -48,12 +55,16 @@ def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     df.columns = [_clean_column_name(c) for c in df.columns]
     df = df.loc[:, ~df.columns.duplicated()].copy()
-    for col in df.select_dtypes(include="object").columns:
-        s = df[col].astype("string").str.strip()
-        df[col] = s.mask(s.str.lower().isin(NULL_TOKENS), pd.NA)
+
+    for col in df.columns:
+        if _is_text_like(df[col]):
+            s = df[col].astype("string").str.strip()
+            df[col] = s.mask(s.str.lower().isin(NULL_TOKENS), pd.NA)
+
     for col in df.columns:
         df[col] = _maybe_datetime(df[col], col)
         df[col] = _maybe_numeric(df[col])
+
     return df
 
 def load_csv(source, max_rows: int | None = 300_000) -> pd.DataFrame:

@@ -1,1 +1,0 @@
-"""Trustworthy FinanceBench RAG package."""

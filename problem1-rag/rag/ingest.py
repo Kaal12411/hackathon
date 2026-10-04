@@ -47,8 +47,13 @@ def parse_documents(directory: Path):
     rows=[]
     for path in sorted(directory.rglob("*")):
         if not path.is_file(): continue
-        if path.suffix.lower()==".pdf": rows.extend(parse_pdf(path))
-        elif path.suffix.lower() in {".txt",".md"}: rows.extend(parse_text_file(path))
+        if path.suffix.lower()==".pdf":
+            try:
+                rows.extend(parse_pdf(path))
+            except Exception as e:
+                print(f"Skipping unreadable PDF {path.name}: {e}")
+        elif path.suffix.lower() in {".txt",".md"}:
+            rows.extend(parse_text_file(path))
     return rows
 
 def build_index(chunks, index_dir: Path = INDEX_DIR):
@@ -70,13 +75,28 @@ def download_financebench_sources(out_dir: Path, limit=None):
         if not name or not link or (name,link) in seen: continue
         seen.add((name,link)); unique.append((name,link))
         if limit and len(unique)>=limit: break
+    downloaded=0
+    skipped=0
+    headers={"User-Agent":"Mozilla/5.0"}
     for i,(name,url) in enumerate(unique,1):
         safe=re.sub(r"[^A-Za-z0-9._-]+","_",name).strip("_")
         if not safe.lower().endswith(".pdf"): safe += ".pdf"
         target=out_dir/safe
-        if target.exists(): continue
+        if target.exists() and target.stat().st_size > 1000:
+            downloaded += 1
+            continue
         print(f"[{i}/{len(unique)}] downloading {target.name}")
-        r=requests.get(url,timeout=60); r.raise_for_status(); target.write_bytes(r.content)
+        try:
+            r=requests.get(url,timeout=60,headers=headers)
+            r.raise_for_status()
+            if "pdf" not in r.headers.get("content-type","").lower() and not r.content.startswith(b"%PDF"):
+                raise ValueError("source did not return a PDF")
+            target.write_bytes(r.content)
+            downloaded += 1
+        except Exception as e:
+            skipped += 1
+            print(f"WARNING: skipped {target.name}: {e}")
+    print(f"FinanceBench download complete: {downloaded} available, {skipped} skipped.")
 
 def main():
     p=argparse.ArgumentParser()

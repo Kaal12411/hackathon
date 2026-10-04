@@ -1,6 +1,6 @@
 # Hackathon Solutions
 
-One repository, one clean structure, multiple independent problems.
+One repository, one clean structure, three independent problems.
 
 ## Problems
 
@@ -22,22 +22,14 @@ python -m rag.ingest --download-financebench --limit 5
 streamlit run app.py
 ```
 
-FinanceBench evaluation:
-```bash
-python evaluate_financebench.py --mode retrieval --limit 20
-python evaluate_financebench.py --mode full --limit 20
-python evaluate_financebench.py --mode refusal
-streamlit run eval_app.py
-```
-
 ### Problem 2 — Real-Time Toxic Comment Filter with Explainability
 Folder: `problem2-toxic-filter/`
 
 Builds a fast toxicity classifier using:
-- word TF-IDF,
-- character TF-IDF for obfuscated/misspelled abuse,
+- word + character TF-IDF,
 - Logistic Regression,
-- F1-tuned decision threshold,
+- F1-tuned threshold,
+- character n-grams for misspelled/obfuscated abuse,
 - real-time latency measurement,
 - token-level explanation/highlighting.
 
@@ -48,8 +40,31 @@ pip install -r requirements.txt
 # place Kaggle train.csv at data/train.csv
 python eda.py --data data/train.csv
 python train.py --data data/train.csv --max-rows 300000
-python evaluate.py --data data/train.csv --sample 50000
 streamlit run app.py
+```
+
+### Problem 3 — Natural Language Spreadsheet Analyst
+Folder: `problem3-spreadsheet-analyst/`
+
+Builds a safe natural-language CSV analyst that:
+- auto-cleans nulls and malformed data,
+- infers dates and numeric types,
+- converts questions into a validated structured query plan,
+- never executes LLM-generated Python,
+- returns a one-line insight + table + Plotly chart,
+- includes an offline fast-path for common NYC 311 questions.
+
+Run:
+```bash
+cd problem3-spreadsheet-analyst
+pip install -r requirements.txt
+python download_sample.py --rows 50000
+streamlit run app.py
+```
+
+Five-question smoke benchmark:
+```bash
+python evaluate_examples.py
 ```
 
 ## Repository layout
@@ -73,6 +88,17 @@ hackathon/
 │   ├── tests/
 │   └── README.md
 │
+├── problem3-spreadsheet-analyst/
+│   ├── app.py
+│   ├── data_loader.py
+│   ├── planner.py
+│   ├── executor.py
+│   ├── charting.py
+│   ├── download_sample.py
+│   ├── evaluate_examples.py
+│   ├── tests/
+│   └── README.md
+│
 └── README.md
 ```
 
@@ -82,5 +108,4 @@ Each problem is self-contained so judges can enter a folder and run it independe
 
 - Problem 1: PatronusAI FinanceBench
 - Problem 2: Jigsaw Unintended Bias in Toxicity Classification
-
-Future problems should be added as `problem3-.../`, `problem4-.../`, etc.
+- Problem 3: NYC Open Data — 311 Service Requests (erm2-nwe9)

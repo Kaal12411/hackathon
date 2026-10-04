@@ -1,7 +1,18 @@
 .venv/
+**/.venv/
 __pycache__/
+**/__pycache__/
 .pytest_cache/
+**/.pytest_cache/
 .env
-data/index/
-data/documents/*.pdf
+**/.env
 *.pyc
+**/*.pyc
+
+# Problem 1 generated/local data
+problem1-rag/data/index/
+problem1-rag/data/documents/*.pdf
+
+# Problem 2 generated/local data
+problem2-toxic-filter/data/*.csv
+problem2-toxic-filter/artifacts/
